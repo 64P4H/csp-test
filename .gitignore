@@ -39,3 +39,7 @@
 
 # debug information files
 *.dwo
+
+# temporal output
+*.txt
+
