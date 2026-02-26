@@ -17,29 +17,86 @@
  * 5. Желательно, чтобы в потоках работали не две разные функции, а 
  одна, принимающая особенности работы через аргументы.
  * 
- * В процессе реализации сперва было принятно решение использовать MPI, но на практике оказалось, что MPI работает с процессами, а не с потоками, от чего связный список у двух процессов был разный, хоть и одинаково сгенерированный. Можно было бы использовать очередь сообщений для синхронизации количества обработанных элементов, но было решено использовать поточное решение, OpenMP. В целях частичной демонстрации решения на MPI было решено сохранить файл main_mpi.cpp.
  */
 
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <pthread.h>
 
-#include "DLinked.hpp"
+#include "dlinked.h"
+#include "thread_magic.h"
 
 #define NUM 100
 
 int main(){
   srand(time(NULL));
 
-  DLinkedList list(NUM);
-  int res;
+  int r;
+  dlinked_list* list;
+  // dlinked_node* node;
+
+  pthread_t threads[2];
   int res0 = 0;
   int res1 = 0;
+  dlinked_node* cur0;
+  dlinked_node* cur1;
+  pthread_mutex_t start_mutex;
+  pthread_mutex_t mutex;
+  thread_arg t_args[2] = {
+    {0, &res0, &cur0, &cur1, &start_mutex, &mutex},
+    {1, &res1, &cur0, &cur1, &start_mutex, &mutex}
+  };
 
-  res = list.threadMagic(&res0, &res1);
+  int nums[2] = {0, 0};
 
-  printf("Counted 0: %i\nCounted 1: %i\n", res0, res1);
-  printf("All elements crossed once: %s\n", res==NUM?"yes":"no");
 
-  exit(!(res==NUM));
+  list = malloc(sizeof(dlinked_list));
+  if(list == NULL) {
+    exit(-1);
+  }
+  r = init_dlinked_list(list, NUM);
+  if(r){
+    fprintf(stderr, "init list malloc error\n");
+    exit(-1);
+  }
+  cur0 = list->first;
+  cur1 = list->last;
+
+  pthread_mutex_init(&start_mutex, NULL);
+  pthread_mutex_init(&mutex, NULL);
+
+  pthread_mutex_lock(&start_mutex); // для единовременного начала
+  pthread_create(threads, NULL, thread_magic, t_args);
+  pthread_create(threads+1, NULL, thread_magic, t_args+1);
+  pthread_mutex_unlock(&start_mutex);
+
+  printf("All threads created\n");
+
+  r = pthread_join(threads[0], (void**)nums);
+  if(r){
+    fprintf(stderr, "error on thread0 join\n");
+    exit(-1);
+  }
+  r = pthread_join(threads[1], (void**)(nums+1));
+  if(r){
+    fprintf(stderr, "error on thread1 join\n");
+    exit(-1);
+  }
+
+  printf("Main program ended\n");
+  printf("Zero bits: %i\n", res0);
+  printf("One bits: %i\n", res0);
+  printf("List elements: %i\n", NUM);
+  printf("By thread 0: %i\n", nums[0]);
+  printf("By thread 1: %i\n", nums[1]);
+  printf("Intersection addresses: %p %p\n", cur0, cur1);
+
+  pthread_mutex_destroy(&start_mutex);
+  pthread_mutex_destroy(&mutex);
+
+  destroy_dlinked_list(list);
+  free(list);
+
+  exit(0);
 }

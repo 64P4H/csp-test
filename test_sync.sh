@@ -1,55 +1,37 @@
 #!/bin/bash
 
-V=
+N=10000
 M=
-N=1000
 c=0
 
 usage() {
   cat <<EOF
   Параметры:
-    -v Verbose
-    -h Режим на истории
-    -c Режим на критической зоне
     -n Указание количества тестов (10000 по умолчанию)
-  По умолчанию запускается режим на флагах. Комбинация hc дает первый упомянутый режим.
+    -c Режим на критической зоне (отключен по умолчанию)
 EOF
 }
 
-is_decimal() {
-  local regex="^[0-9]+$"
-  if [ "$1" =~ $regex ]; then
-    return 0
-  else
-    return 1
-  fi
-}
-
-while getopts ":vhcn:" opt;do
+while getopts ":сn" opt;do
   case "$opt" in
-    v) V='-DVERB' ;;
-    h) M='-DHIST' ;;
     c) M='-DCRIT' ;;
     n) 
       N=${OPTARG}
       regex="^[0-9]+$"
       if ! [[ $N =~ $regex ]]; then
-        N=1000
+        N=10000
       elif [ $N -eq 0 ]; then
-        N=1000
+        N=10000
       fi
       ;;
     \?) usage; exit 2 ;;
   esac
 done
 
-rm t*.txt
-g++ main.cpp DLinked.cpp -fopenmp -o main.out $V $M
+gcc main.c dlinked.c thread_magic.c -pthread -o main.out $M
 for i in $(seq 1 $N); do
-  ./main.out > t$i.txt 2> t$i.txt
-  if [ $? -eq 0 ]; then
-    rm t$i.txt
-  else
+  ./main.out > /dev/null 2> /dev/null
+  if [ $? -ne 0 ]; then
     ((++c))
   fi
 done
