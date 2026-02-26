@@ -38,17 +38,17 @@ int main(){
   pthread_t threads[2];
   int res0 = 0;
   int res1 = 0;
+  int stop = 0;
   dlinked_node* cur0;
   dlinked_node* cur1;
-  pthread_mutex_t start_mutex;
+  pthread_barrier_t start_barrier;
   pthread_mutex_t mutex;
   thread_arg t_args[2] = {
-    {0, &res0, &cur0, &cur1, &start_mutex, &mutex},
-    {1, &res1, &cur0, &cur1, &start_mutex, &mutex}
+    {0, &res0, &stop, &cur0, &cur1, &start_barrier, &mutex},
+    {1, &res1, &stop, &cur0, &cur1, &start_barrier, &mutex}
   };
 
   int nums[2] = {0, 0};
-
 
   list = malloc(sizeof(dlinked_list));
   if(list == NULL) {
@@ -62,13 +62,12 @@ int main(){
   cur0 = list->first;
   cur1 = list->last;
 
-  pthread_mutex_init(&start_mutex, NULL);
+  pthread_barrier_init(&start_barrier, NULL, 3);
   pthread_mutex_init(&mutex, NULL);
 
-  pthread_mutex_lock(&start_mutex); // для одновременного начала
   pthread_create(threads, NULL, thread_magic, t_args);
   pthread_create(threads+1, NULL, thread_magic, t_args+1);
-  pthread_mutex_unlock(&start_mutex);
+  pthread_barrier_wait(&start_barrier);
 
   printf("All threads created\n");
 
@@ -85,17 +84,17 @@ int main(){
 
   printf("Main program ended\n");
   printf("Zero bits: %i\n", res0);
-  printf("One bits: %i\n", res0);
+  printf("One bits: %i\n", res1);
   printf("List elements: %i\n", NUM);
   printf("By thread 0: %i\n", nums[0]);
   printf("By thread 1: %i\n", nums[1]);
   printf("Intersection addresses: %p %p\n", cur0, cur1);
 
-  pthread_mutex_destroy(&start_mutex);
+  pthread_barrier_destroy(&start_barrier);
   pthread_mutex_destroy(&mutex);
 
   destroy_dlinked_list(list);
   free(list);
 
-  exit(0);
+  exit(NUM != nums[0]+nums[1]);
 }
