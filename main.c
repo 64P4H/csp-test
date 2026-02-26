@@ -34,7 +34,6 @@ int main(){
 
   int r;
   dlinked_list* list;
-  // dlinked_node* node;
 
   pthread_t threads[2];
   int res0 = 0;
@@ -66,7 +65,7 @@ int main(){
   pthread_mutex_init(&start_mutex, NULL);
   pthread_mutex_init(&mutex, NULL);
 
-  pthread_mutex_lock(&start_mutex); // для единовременного начала
+  pthread_mutex_lock(&start_mutex); // для одновременного начала
   pthread_create(threads, NULL, thread_magic, t_args);
   pthread_create(threads+1, NULL, thread_magic, t_args+1);
   pthread_mutex_unlock(&start_mutex);

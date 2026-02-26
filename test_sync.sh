@@ -1,20 +1,17 @@
 #!/bin/bash
 
 N=10000
-M=
 c=0
 
 usage() {
   cat <<EOF
   Параметры:
     -n Указание количества тестов (10000 по умолчанию)
-    -c Режим на критической зоне (отключен по умолчанию)
 EOF
 }
 
 while getopts ":сn" opt;do
   case "$opt" in
-    c) M='-DCRIT' ;;
     n) 
       N=${OPTARG}
       regex="^[0-9]+$"
@@ -28,7 +25,7 @@ while getopts ":сn" opt;do
   esac
 done
 
-gcc main.c dlinked.c thread_magic.c -pthread -o main.out $M
+gcc main.c dlinked.c thread_magic.c -pthread -o main.out
 for i in $(seq 1 $N); do
   ./main.out > /dev/null 2> /dev/null
   if [ $? -ne 0 ]; then
