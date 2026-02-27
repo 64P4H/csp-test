@@ -38,14 +38,11 @@ int main(){
   pthread_t threads[2];
   int res0 = 0;
   int res1 = 0;
-  int stop = 0;
-  dlinked_node* cur0;
-  dlinked_node* cur1;
   pthread_barrier_t start_barrier;
   pthread_mutex_t mutex;
   thread_arg t_args[2] = {
-    {0, &res0, &stop, &cur0, &cur1, &start_barrier, &mutex},
-    {1, &res1, &stop, &cur0, &cur1, &start_barrier, &mutex}
+    {0, &res0, &list, &start_barrier, &mutex},
+    {1, &res1, &list, &start_barrier, &mutex}
   };
 
   int nums[2] = {0, 0};
@@ -59,8 +56,6 @@ int main(){
     fprintf(stderr, "init list malloc error\n");
     exit(-1);
   }
-  cur0 = list->first;
-  cur1 = list->last;
 
   pthread_barrier_init(&start_barrier, NULL, 3);
   pthread_mutex_init(&mutex, NULL);
@@ -88,7 +83,7 @@ int main(){
   printf("List elements: %i\n", NUM);
   printf("By thread 0: %i\n", nums[0]);
   printf("By thread 1: %i\n", nums[1]);
-  printf("Intersection addresses: %p %p\n", cur0, cur1);
+  printf("List edges: %p %p\n", list->first, list->last);
 
   pthread_barrier_destroy(&start_barrier);
   pthread_mutex_destroy(&mutex);

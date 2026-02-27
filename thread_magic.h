@@ -11,12 +11,8 @@ typedef struct _thread_arg{
   int ind;
   /** \brief Результат выполняемого потока */
   int* res;
-  /** \brief Флаг остановки потоков */
-  int* stop;
-  /** \brief Указатель на текущий обрабатываемый в нулевом потоке элемент */
-  dlinked_node** cur0;
-  /** \brief Указатель на текущий обрабатываемый в первом потоке элемент */
-  dlinked_node** cur1;
+  /** \brief Обрабатываемый список */
+  dlinked_list** list;
   /** \brief Барьер начала работы потоков */
   pthread_barrier_t* start_barrier;
   /** \brief Мьютекс обработки защищаемых данных */
